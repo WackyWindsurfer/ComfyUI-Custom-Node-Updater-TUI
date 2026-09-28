@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import subprocess
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
@@ -93,6 +94,11 @@ def config_path() -> Path:
     base = os.environ.get("APPDATA") or os.environ.get("XDG_CONFIG_HOME")
     root = Path(base) if base else Path.home() / ".config"
     return root / "ComfyUI-Custom-Node-Updater-TUI" / "config.json"
+
+
+def log_path() -> Path:
+    """Where the persistent activity log lives (same dir as config)."""
+    return config_path().parent / "activity.log"
 
 
 def load_saved_nodes_dir() -> Path | None:
@@ -795,6 +801,19 @@ class ComfyUICustomNodeUpdaterApp(App[None]):
 
     def _log(self, markup: str) -> None:
         self.query_one("#activity", RichLog).write(f"[dim]{self._stamp()}[/dim] {markup}")
+        self._log_to_file(markup)
+
+    @staticmethod
+    def _log_to_file(markup: str) -> None:
+        """Append the activity line to the persistent log (best-effort)."""
+        plain = re.sub(r"\[/?[^\[\]]*\]", "", markup)
+        try:
+            path = log_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8") as fh:
+                fh.write(f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  {plain}\n")
+        except OSError:
+            pass  # never let logging break the TUI
 
     @staticmethod
     def _stamp() -> str:
