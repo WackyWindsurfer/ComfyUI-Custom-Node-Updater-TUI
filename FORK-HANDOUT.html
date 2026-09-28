@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ComfyUI Custom-Node-Updater — Fork & Additions (Hand-out)</title>
+<style>
+  :root{
+    --bg:#ffffff; --ink:#1a1d21; --muted:#5b6470; --line:#e3e7ec;
+    --accent:#0b6e4f; --accent-soft:#e6f4ef; --code-bg:#f4f6f8; --warn:#8a5a00;
+    --warn-bg:#fff6e6; --chip:#eef1f4;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  .page{max-width:820px; margin:0 auto; padding:32px 28px 56px}
+  header.hero{border-bottom:3px solid var(--accent); padding-bottom:18px; margin-bottom:22px}
+  .kicker{font-size:12px; letter-spacing:.14em; text-transform:uppercase; color:var(--accent); font-weight:700}
+  h1{font-size:30px; line-height:1.15; margin:8px 0 6px}
+  .sub{color:var(--muted); font-size:15px; margin:0}
+  .repo{margin-top:12px; font-size:13px; color:var(--muted)}
+  .repo code{color:var(--accent); font-weight:600}
+  h2{font-size:19px; margin:30px 0 10px; padding-top:6px}
+  h2 .n{display:inline-block; min-width:26px; height:26px; line-height:26px; text-align:center;
+        background:var(--accent); color:#fff; border-radius:50%; font-size:14px; margin-right:9px}
+  p{margin:8px 0}
+  ul{margin:8px 0; padding-left:20px}
+  li{margin:4px 0}
+  code{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",Menlo,monospace;
+       background:var(--code-bg); padding:1px 5px; border-radius:4px; font-size:13.5px}
+  pre{background:var(--code-bg); border:1px solid var(--line); border-radius:8px;
+      padding:12px 14px; overflow-x:auto; font-size:13px; line-height:1.5}
+  pre code{background:none; padding:0}
+  .callout{border-left:4px solid var(--warn); background:var(--warn-bg);
+           padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:14.5px}
+  .callout b{color:var(--warn)}
+  .ok{border-left:4px solid var(--accent); background:var(--accent-soft);
+      padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:14.5px}
+  table{border-collapse:collapse; width:100%; margin:12px 0; font-size:14px}
+  th,td{border:1px solid var(--line); padding:7px 10px; text-align:left; vertical-align:top}
+  th{background:var(--chip); font-weight:600}
+  td code{white-space:nowrap}
+  .states{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0}
+  .state{font-size:12.5px; padding:4px 10px; border-radius:20px; border:1px solid var(--line); background:var(--chip)}
+  .state b{font-weight:700}
+  .green{color:#0b6e4f}.red{color:#b3261e}.yellow{color:#8a5a00}.magenta{color:#7b1fa2}
+  footer{margin-top:36px; padding-top:16px; border-top:1px solid var(--line);
+         font-size:12.5px; color:var(--muted)}
+  .pill{display:inline-block; background:var(--accent-soft); color:var(--accent);
+        font-weight:600; font-size:12px; padding:2px 10px; border-radius:20px; margin-right:6px}
+  @media print{
+    body{font-size:11.5pt}
+    .page{padding:0; max-width:none}
+    h1{font-size:22pt}
+    pre{white-space:pre-wrap; word-break:break-word}
+    .page{break-inside:auto}
+    h2{break-after:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <div class="kicker">Hand-out · Fork &amp; Additions</div>
+    <h1>ComfyUI Custom-Node-Updater</h1>
+    <p class="sub">A terminal UI for keeping every git-based ComfyUI custom node up to date — <b>safely</b>.
+    Fast-forward only: it never merges, never rebases, and never touches a repo that has diverged or would lose work.</p>
+    <div class="repo">
+      <span class="pill">Fork</span> <code>WackyWindsurfer/ComfyUI-Custom-Node-Updater-TUI</code>
+      &nbsp;·&nbsp; <span class="pill">Branch</span> <code>feature/activity-log</code><br>
+      Upstream: <code>LacklusterOpsec/ComfyUI-Custom-Node-Updater-TUI</code>
+    </div>
+  </header>
+
+  <p>This fork adds <b>three things</b> on top of the upstream tool: a <b>persistent activity log</b>,
+  a <b>headless runner</b> for automation, and a <b>manual <code>.bat</code> launcher</b>.</p>
+
+  <h2><span class="n">1</span> Setup (5 minutes)</h2>
+  <pre><code>git clone -b feature/activity-log https://github.com/WackyWindsurfer/ComfyUI-Custom-Node-Updater-TUI.git
+cd ComfyUI-Custom-Node-Updater-TUI</code></pre>
+  <p><b>Create a project venv and install the two dependencies into it.</b></p>
+  <div class="callout"><b>⚠ Do not use bare <code>pip install</code></b> if you have more than one Python on your
+  system — the install and the run can land in different interpreters and you'll get
+  <code>ModuleNotFoundError: No module named 'rich'</code>. A venv pins everything to one interpreter.</div>
+  <pre><code>python -m venv .venv
+.venv\Scripts\python -m pip install textual rich</code></pre>
+  <p><b>Run the TUI</b> (use <code>-X utf8</code> on Windows so non-ASCII text renders correctly):</p>
+  <pre><code>.venv\Scripts\python -X utf8 ComfyUI-Custom-Node-Updater-TUI.py --nodes-dir "C:\path\to\your\ComfyUI\custom_nodes"</code></pre>
+  <p>Without <code>--nodes-dir</code> it auto-discovers the folder (env var → last-used → walk up the tree) or opens a
+  folder picker. The choice is remembered. Optional sanity check:</p>
+  <pre><code>.venv\Scripts\python -X utf8 ComfyUI-Custom-Node-Updater-TUI.py --self-test</code></pre>
+
+  <h2><span class="n">2</span> Using the TUI</h2>
+  <table>
+    <tr><th>Key</th><th>Action</th></tr>
+    <tr><td><code>space</code></td><td>select / deselect the highlighted repo</td></tr>
+    <tr><td><code>a</code></td><td>select all repos that are behind</td></tr>
+    <tr><td><code>u</code></td><td>clear selection</td></tr>
+    <tr><td><code>p</code></td><td><b>Pull</b> the selected repos (confirm screen first)</td></tr>
+    <tr><td><code>s</code></td><td>toggle <b>autostash</b> (stash local edits around the pull)</td></tr>
+    <tr><td><code>f</code></td><td>toggle <b>fetch</b> (network on/off)</td></tr>
+    <tr><td><code>o</code></td><td>choose a different <code>custom_nodes</code> folder</td></tr>
+    <tr><td><code>t</code></td><td>cycle theme</td></tr>
+    <tr><td><code>q</code></td><td>quit</td></tr>
+  </table>
+  <div class="states">
+    <span class="state"><b class="green">current</b> up to date</span>
+    <span class="state"><b class="red">behind</b> updatable</span>
+    <span class="state"><b class="yellow">ahead</b> local commits</span>
+    <span class="state"><b class="magenta">diverged</b> resolve manually</span>
+    <span class="state"><b class="yellow">modified</b> local edits</span>
+    <span class="state"><b class="red">error</b></span>
+  </div>
+
+  <h2><span class="n">3</span> Addition 1 — Persistent activity log</h2>
+  <p>Upstream's Activity panel is in-memory only — gone when you quit. This fork <b>tees every line to a file</b>
+  so you have a durable record of what the tool did.</p>
+  <ul>
+    <li><b>Location:</b> same folder as <code>config.json</code> —
+      Windows <code>%APPDATA%\ComfyUI-Custom-Node-Updater-TUI\activity.log</code>,
+      Linux/macOS <code>~/.config/ComfyUI-Custom-Node-Updater-TUI/activity.log</code></li>
+    <li><b>Format:</b> plain text (markup stripped), each line prefixed with a full timestamp.</li>
+  </ul>
+  <pre><code>2026-09-28 10:12:56  scanning C:\...\custom_nodes
+2026-09-28 10:12:57  scan complete: 2 behind, 0 errors
+2026-09-28 10:12:58  ok   demo - pulled (local edits restored)</code></pre>
+  <p>Best-effort: a write failure never breaks the TUI. Open the file any time to see history.</p>
+
+  <h2><span class="n">4</span> Addition 2 — Headless runner (automation)</h2>
+  <p><code>ComfyUI-Custom-Node-Updater-TUI-headless.py</code> runs the <b>same safety gate as the TUI</b> (no UI) —
+  so it's just as safe as pressing <i>Pull</i>. It scans all repos in parallel, fast-forwards the safe ones, and writes a report.</p>
+  <pre><code>.venv\Scripts\python -X utf8 ComfyUI-Custom-Node-Updater-TUI-headless.py</code></pre>
+  <table>
+    <tr><th>Flag</th><th>Effect</th></tr>
+    <tr><td><code>--nodes-dir DIR</code></td><td>process a specific dir (repeatable; default = built-in list)</td></tr>
+    <tr><td><code>--no-pull</code></td><td><b>dry run</b> — scan + report, change nothing</td></tr>
+    <tr><td><code>--no-fetch</code></td><td>compare against local refs only (no network)</td></tr>
+  </table>
+  <p>Output appends to <code>activity.log</code> and writes <code>last-headless-run.json</code> (per-dir: pulled, skipped-by-reason, errors).
+  A <b>6-hour stale-lock guard</b> prevents overlapping runs — a second run exits immediately.
+  <b>Note:</b> the built-in <code>DEFAULT_NODES_DIRS</code> list is machine-specific; on another machine pass your own dirs with <code>--nodes-dir</code>.</p>
+
+  <h2><span class="n">5</span> Addition 3 — Manual <code>.bat</code> launcher</h2>
+  <p><code>ComfyUI-Custom-Node-Updater-TUI-headless.bat</code> is a one-click wrapper around the headless runner
+  (auto-finds the venv, pauses so the window stays open).</p>
+  <pre><code>ComfyUI-Custom-Node-Updater-TUI-headless.bat            real run — pulls the safe repos
+ComfyUI-Custom-Node-Updater-TUI-headless.bat dry       dry run — report only, changes nothing
+ComfyUI-Custom-Node-Updater-TUI-headless.bat nofetch   real run, but no network fetch</code></pre>
+  <div class="ok"><b>Double-clicking it in Explorer = a real run.</b></div>
+
+  <h2><span class="n">6</span> (Optional) Schedule it</h2>
+  <p>For a daily unattended run, use your OS task scheduler to invoke the <b>venv python directly</b>
+  (not the <code>.bat</code> — it ends with <code>pause</code>, which would hang a scheduled task).</p>
+  <pre><code>schtasks /Create /F /SC DAILY /ST 03:30 /TN "ComfyUI-Custom-Node-Updater-Headless" ^
+  /TR "\"&lt;path&gt;\.venv\Scripts\python.exe\" -X utf8 \"&lt;path&gt;\ComfyUI-Custom-Node-Updater-TUI-headless.py\""</code></pre>
+  <table>
+    <tr><th>Command</th><th>Effect</th></tr>
+    <tr><td><code>schtasks /Query /TN "…" /V /FO LIST</code></td><td>inspect</td></tr>
+    <tr><td><code>schtasks /Change /TN "…" /DISABLE</code></td><td>pause</td></tr>
+    <tr><td><code>schtasks /Change /TN "…" /ENABLE</code></td><td>resume</td></tr>
+    <tr><td><code>schtasks /Delete /TN "…" /F</code></td><td>remove</td></tr>
+  </table>
+
+  <h2>Why it's safe</h2>
+  <p>The "never lose work" guarantee comes from two things working together:</p>
+  <ul>
+    <li><b><code>git merge --ff-only</code></b> — the pull is <i>structurally</i> fast-forward only, so it can never
+    create a merge commit or rewrite history.</li>
+    <li><b>A pre-pull gate</b> — each repo is checked before touching it and <b>skipped</b> (not forced) if it is
+    diverged, detached, has no upstream, or if your local edits overlap the incoming changes. Diverged and overlap
+    repos are always left for you to resolve.</li>
+  </ul>
+  <p><b>Autostash</b> (on by default in the headless runner) temporarily stashes non-overlapping local edits around the
+  pull and restores them; if the restore conflicts, the update is kept and the edits stay recoverable in the stash rather
+  than half-applied.</p>
+  <p><b>Limitations (by design):</b> only immediate subdirectories are scanned (no nested repos); it never
+  rebases/merges/forces; it does not install dependencies or update ComfyUI itself.</p>
+
+  <footer>
+    Fork of <code>LacklusterOpsec/ComfyUI-Custom-Node-Updater-TUI</code> (GPL-3.0). Additions: activity log,
+    headless runner, manual launcher — branch <code>feature/activity-log</code>.
+  </footer>
+
+</div>
+</body>
+</html>
